@@ -1,4 +1,7 @@
-use std::u32;
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    u32,
+};
 
 use ast::AST;
 
@@ -32,49 +35,83 @@ fn multiplier(a: u32, b: u32) -> u32 {
     res
 }
 
-
 fn gray_code(n: u32) -> u32 {
     n ^ (n >> 1)
 }
 
-
-
-fn main() {
-    let expr = "110|&";
-    let tree = AST::try_from(expr.to_string()).unwrap();
-
-    println!("{:?}", tree);
-
-    //------------------------------
-    println!("ADDER MAIN");
-    println!("{}", adder(5, 5));
-    println!("{}", adder(5, 7));
-    println!("{}", adder(5, 5));
-    println!("{}", adder(5, 0));
-    println!("{}", adder(0, 0));
-    println!("{}", adder(0, 7));
-    println!("{}", adder(u32::MAX, 654));
-
-    println!("MULTIPLIER MAIN");
-    println!("{}", multiplier(5, 5));
-    println!("{}", multiplier(5, 7));
-    println!("{}", multiplier(5, 5));
-    println!("{}", multiplier(5, 0));
-    println!("{}", multiplier(0, 0));
-
-    println!("GRAY CODE MAIN");
-    println!("{}", gray_code(0));
-    println!("{}", gray_code(1));
-    println!("{}", gray_code(2));
-    println!("{}", gray_code(3));
-    println!("{}", gray_code(4));
-    println!("{}", gray_code(5));
+fn eval_formula(formula: &str) -> bool {
+    let tree = AST::try_from(formula.to_string()).unwrap();
+    tree.solve()
 }
 
+fn print_truth_table(formula: &str) {
+    // find the variables in the formula (unique and capital letters only)
+    let mut list = formula
+        .chars()
+        .filter(|c| c.is_ascii_uppercase())
+        .collect::<BTreeSet<char>>();
+
+    /*
+       A B C
+       0 0 0
+       1 0 0
+       0 1 0
+       0 0 1
+
+       0000
+       0111
+    */
+
+    for c in list.iter() {
+        print!("{},", c);
+    }
+    println!();
+
+    let mut map = list.iter().map(|&c| (c, 0)).collect::<BTreeMap<char, u32>>();
+
+    for i in 0..2u32.pow(list.len() as u32) {
+        let mut j = 0;
+        for c in list.iter().rev() {
+            // print!("{},", (i >> j) & 1);
+            map.insert(*c, (i >> j) & 1);
+            j += 1;
+        }
+        println!("{:?}", map);
+    }
+}
+
+fn main() {
+    // println!("ADDER MAIN");
+    // println!("{}", adder(5, 5));
+    // println!("{}", adder(5, 7));
+    // println!("{}", adder(5, 5));
+    // println!("{}", adder(5, 0));
+    // println!("{}", adder(0, 0));
+    // println!("{}", adder(0, 7));
+    // println!("{}", adder(u32::MAX, 654));
+
+    // println!("MULTIPLIER MAIN");
+    // println!("{}", multiplier(5, 5));
+    // println!("{}", multiplier(5, 7));
+    // println!("{}", multiplier(5, 5));
+    // println!("{}", multiplier(5, 0));
+    // println!("{}", multiplier(0, 0));
+
+    // println!("GRAY CODE MAIN");
+    // println!("{}", gray_code(0));
+    // println!("{}", gray_code(1));
+    // println!("{}", gray_code(2));
+    // println!("{}", gray_code(3));
+    // println!("{}", gray_code(4));
+    // println!("{}", gray_code(5));
+
+    let formula = "ABCA";
+    print_truth_table(formula);
+}
 
 #[cfg(test)]
 mod tests {
-    use crate::{adder, gray_code, multiplier};
+    use crate::{adder, eval_formula, gray_code, multiplier};
 
     #[test]
     fn test_adder() {
@@ -114,5 +151,19 @@ mod tests {
         assert_eq!(gray_code(6), 5);
         assert_eq!(gray_code(7), 4);
         assert_eq!(gray_code(8), 12);
+    }
+
+    #[test]
+    fn test_eval_formula() {
+        assert_eq!(eval_formula("1"), true);
+        assert_eq!(eval_formula("0"), false);
+        assert_eq!(eval_formula("10&"), false);
+        assert_eq!(eval_formula("10|"), true);
+        assert_eq!(eval_formula("11>"), true);
+        assert_eq!(eval_formula("00>"), true);
+        assert_eq!(eval_formula("10>"), false);
+        assert_eq!(eval_formula("01>"), true);
+        assert_eq!(eval_formula("10="), false);
+        assert_eq!(eval_formula("1011||="), true);
     }
 }

@@ -76,11 +76,45 @@ impl Node {
     fn add_right(&mut self, node: Node) {
         self.right = Some(Box::new(node));
     }
+
+    fn solve_node(&self) -> bool {
+        match self.unit {
+            Unit::Operator(Operator::BinaryOperator(BinaryOperator::And)) => {
+                self.left.as_ref().unwrap().solve_node()
+                    && self.right.as_ref().unwrap().solve_node()
+            }
+            Unit::Operator(Operator::BinaryOperator(BinaryOperator::Or)) => {
+                self.left.as_ref().unwrap().solve_node()
+                    || self.right.as_ref().unwrap().solve_node()
+            }
+            Unit::Operator(Operator::BinaryOperator(BinaryOperator::Implies)) => {
+                !self.left.as_ref().unwrap().solve_node()
+                    || self.right.as_ref().unwrap().solve_node()
+            }
+            Unit::Operator(Operator::BinaryOperator(BinaryOperator::Equivalent)) => {
+                self.left.as_ref().unwrap().solve_node()
+                    == self.right.as_ref().unwrap().solve_node()
+            }
+            Unit::Operator(Operator::BinaryOperator(BinaryOperator::Xor)) => {
+                self.left.as_ref().unwrap().solve_node()
+                    != self.right.as_ref().unwrap().solve_node()
+            }
+            Unit::Operator(Operator::Not) => !self.left.as_ref().unwrap().solve_node(),
+            Unit::Value(Value::True) => true,
+            Unit::Value(Value::False) => false,
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct AST {
     root: Node,
+}
+
+impl AST {
+    pub fn solve(&self) -> bool {
+        self.root.solve_node()
+    }
 }
 
 impl TryFrom<String> for AST {
@@ -125,3 +159,4 @@ impl TryFrom<String> for AST {
         Ok(AST { root: stack.pop().unwrap() })
     }
 }
+
