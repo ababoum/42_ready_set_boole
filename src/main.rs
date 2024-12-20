@@ -5,6 +5,7 @@ use std::{
 
 use ast::AST;
 
+mod nnf;
 mod ast;
 
 fn eval_formula(formula: &str) -> bool {
@@ -12,6 +13,8 @@ fn eval_formula(formula: &str) -> bool {
     tree.solve()
 }
 
+//TODO: Anton delete horrible for loops please
+//TODO: Anton delete horrible .to_string() please
 fn print_truth_table(formula: &str) {
     // find the variables in the formula (unique and capital letters only)
     let list = formula
@@ -38,11 +41,9 @@ fn print_truth_table(formula: &str) {
         let mut j = 0;
         let mut boolean_formula = formula.to_string();
         for c in list.iter().rev() {
-            // print!("{},", (i >> j) & 1);
             map.insert(*c, (i >> j) & 1);
             j += 1;
         }
-        // replace the variables in the formula with the values in the map
         for (k, v) in map.iter() {
             boolean_formula = boolean_formula.replace(&k.to_string(), &v.to_string());
         }
@@ -63,7 +64,7 @@ fn main() {
 mod tests {
 
     use super::*;
-    
+
     #[test]
     fn test_eval_formula() {
         assert_eq!(eval_formula("1"), true);
