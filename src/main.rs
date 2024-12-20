@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet},
     u32,
 };
 
@@ -51,32 +51,38 @@ fn print_truth_table(formula: &str) {
         .filter(|c| c.is_ascii_uppercase())
         .collect::<BTreeSet<char>>();
 
-    /*
-       A B C
-       0 0 0
-       1 0 0
-       0 1 0
-       0 0 1
-
-       0000
-       0111
-    */
-
     for c in list.iter() {
-        print!("{},", c);
+        print!("| {} ", c);
     }
-    println!();
+    println!("| = |");
 
-    let mut map = list.iter().map(|&c| (c, 0)).collect::<BTreeMap<char, u32>>();
+    for _ in list.iter() {
+        print!("|---");
+    }
+    println!("|---|");
+
+    let mut map = list
+        .iter()
+        .map(|&c| (c, 0))
+        .collect::<BTreeMap<char, u32>>();
 
     for i in 0..2u32.pow(list.len() as u32) {
         let mut j = 0;
+        let mut boolean_formula = formula.to_string();
         for c in list.iter().rev() {
             // print!("{},", (i >> j) & 1);
             map.insert(*c, (i >> j) & 1);
             j += 1;
         }
-        println!("{:?}", map);
+        // replace the variables in the formula with the values in the map
+        for (k, v) in map.iter() {
+            boolean_formula = boolean_formula.replace(&k.to_string(), &v.to_string());
+        }
+        map.insert('=', eval_formula(&boolean_formula) as u32);
+        for c in list.iter() {
+            print!("| {} ", map[c]);
+        }
+        println!("| {} |", map[&'=']);
     }
 }
 
@@ -105,7 +111,7 @@ fn main() {
     // println!("{}", gray_code(4));
     // println!("{}", gray_code(5));
 
-    let formula = "ABCA";
+    let formula = "AB&C|";
     print_truth_table(formula);
 }
 

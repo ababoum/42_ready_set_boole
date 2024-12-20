@@ -1,11 +1,9 @@
-//TODO: rename
 #[derive(Debug)]
-enum Unit {
+enum Token {
     Operator(Operator),
     Value(Value),
 }
 
-//TODO: check if values have correct names
 #[derive(Debug, Clone, Copy)]
 enum Operator {
     BinaryOperator(BinaryOperator),
@@ -27,27 +25,27 @@ enum Value {
     False,
 }
 
-impl TryFrom<char> for Unit {
+impl TryFrom<char> for Token {
     type Error = String;
 
     fn try_from(value: char) -> Result<Self, Self::Error> {
         match value {
-            '&' => Ok(Unit::Operator(Operator::BinaryOperator(
+            '&' => Ok(Token::Operator(Operator::BinaryOperator(
                 BinaryOperator::And,
             ))),
-            '|' => Ok(Unit::Operator(Operator::BinaryOperator(BinaryOperator::Or))),
-            '>' => Ok(Unit::Operator(Operator::BinaryOperator(
+            '|' => Ok(Token::Operator(Operator::BinaryOperator(BinaryOperator::Or))),
+            '>' => Ok(Token::Operator(Operator::BinaryOperator(
                 BinaryOperator::Implies,
             ))),
-            '=' => Ok(Unit::Operator(Operator::BinaryOperator(
+            '=' => Ok(Token::Operator(Operator::BinaryOperator(
                 BinaryOperator::Equivalent,
             ))),
-            '^' => Ok(Unit::Operator(Operator::BinaryOperator(
+            '^' => Ok(Token::Operator(Operator::BinaryOperator(
                 BinaryOperator::Xor,
             ))),
-            '!' => Ok(Unit::Operator(Operator::Not)),
-            '1' => Ok(Unit::Value(Value::True)),
-            '0' => Ok(Unit::Value(Value::False)),
+            '!' => Ok(Token::Operator(Operator::Not)),
+            '1' => Ok(Token::Value(Value::True)),
+            '0' => Ok(Token::Value(Value::False)),
             _ => Err(format!("Invalid character: {}", value)),
         }
     }
@@ -57,15 +55,15 @@ impl TryFrom<char> for Unit {
 struct Node {
     left: Option<Box<Node>>,
     right: Option<Box<Node>>,
-    unit: Unit,
+    token: Token,
 }
 
 impl Node {
-    fn new(unit: Unit) -> Node {
+    fn new(token: Token) -> Node {
         Node {
             left: None,
             right: None,
-            unit: unit,
+            token: token,
         }
     }
 
@@ -78,30 +76,30 @@ impl Node {
     }
 
     fn solve_node(&self) -> bool {
-        match self.unit {
-            Unit::Operator(Operator::BinaryOperator(BinaryOperator::And)) => {
+        match self.token {
+            Token::Operator(Operator::BinaryOperator(BinaryOperator::And)) => {
                 self.left.as_ref().unwrap().solve_node()
                     && self.right.as_ref().unwrap().solve_node()
             }
-            Unit::Operator(Operator::BinaryOperator(BinaryOperator::Or)) => {
+            Token::Operator(Operator::BinaryOperator(BinaryOperator::Or)) => {
                 self.left.as_ref().unwrap().solve_node()
                     || self.right.as_ref().unwrap().solve_node()
             }
-            Unit::Operator(Operator::BinaryOperator(BinaryOperator::Implies)) => {
+            Token::Operator(Operator::BinaryOperator(BinaryOperator::Implies)) => {
                 !self.left.as_ref().unwrap().solve_node()
                     || self.right.as_ref().unwrap().solve_node()
             }
-            Unit::Operator(Operator::BinaryOperator(BinaryOperator::Equivalent)) => {
+            Token::Operator(Operator::BinaryOperator(BinaryOperator::Equivalent)) => {
                 self.left.as_ref().unwrap().solve_node()
                     == self.right.as_ref().unwrap().solve_node()
             }
-            Unit::Operator(Operator::BinaryOperator(BinaryOperator::Xor)) => {
+            Token::Operator(Operator::BinaryOperator(BinaryOperator::Xor)) => {
                 self.left.as_ref().unwrap().solve_node()
                     != self.right.as_ref().unwrap().solve_node()
             }
-            Unit::Operator(Operator::Not) => !self.left.as_ref().unwrap().solve_node(),
-            Unit::Value(Value::True) => true,
-            Unit::Value(Value::False) => false,
+            Token::Operator(Operator::Not) => !self.left.as_ref().unwrap().solve_node(),
+            Token::Value(Value::True) => true,
+            Token::Value(Value::False) => false,
         }
     }
 }
@@ -124,26 +122,25 @@ impl TryFrom<String> for AST {
         let tokens: Vec<Node> =
             value
                 .chars()
-                .try_fold(Vec::new(), |mut acc, c| match Unit::try_from(c) {
-                    Ok(unit) => {
-                        acc.push(Node::new(unit));
+                .try_fold(Vec::new(), |mut acc, c| match Token::try_from(c) {
+                    Ok(token) => {
+                        acc.push(Node::new(token));
                         Ok(acc)
                     }
                     Err(e) => Err(e),
                 })?;
-        println!("{:?}", tokens);
 
         let mut stack: Vec<Node> = vec![];
 
         for mut token in tokens.into_iter() {
-            match token.unit {
-                Unit::Operator(Operator::Not) => {
+            match token.token {
+                Token::Operator(Operator::Not) => {
                     let operand = stack.pop()
                     .ok_or_else(|| String::from("Invalid expression for not operator"))?;
                     token.add_left(operand);
                     stack.push(token);
                 }
-                Unit::Operator(op) => {
+                Token::Operator(op) => {
                     let right = stack.pop()
                     .ok_or_else(|| format!("Invalid expression for {op:?} operator"))?;
                     let left = stack.pop()
